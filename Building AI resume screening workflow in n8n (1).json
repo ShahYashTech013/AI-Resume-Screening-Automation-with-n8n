@@ -1,0 +1,269 @@
+{
+  "name": "Building AI resume screening workflow in n8n",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "event": "=messageReceived",
+        "filters": {
+          "q": "subject:Application for Java Developer Position has:attachment"
+        }
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -288,
+        -48
+      ],
+      "id": "7b5b6ec8-5ca9-49a5-9eb3-96fb479e16ff",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "wMnemXK28PJXJfXP",
+          "name": "Gmail account 19"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "messageId": "={{ $('Gmail Trigger').item.json.id }}",
+        "simple": false,
+        "options": {
+          "dataPropertyAttachmentsPrefixName": "attachment_",
+          "downloadAttachments": true
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        64,
+        -48
+      ],
+      "id": "3bab3a8a-2ddf-44cc-8e80-c062b500cb08",
+      "name": "Get a message",
+      "webhookId": "33776745-2db8-4e0c-a74d-caf5a2c56de1",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "1VdAIVBvjx3n6I0z",
+          "name": "Gmail account 20"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "attachment_0",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        272,
+        -48
+      ],
+      "id": "5fe2394a-f8b1-4653-939e-07f9c3d85649",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4",
+          "mode": "list",
+          "cachedResultName": "GPT-4"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=You are an ATS (Applicant Tracking System) scanner for a company.\n\nJOB REQUIREMENTS:\n- Position: Java Developer\n- Required Skills: Java, JSP, Servlets, MySQL, Spring Boot, JDBC, HTML, CSS\n- Experience: 0-1 year (Freshers Welcome)\n- Education: BE/BTech Computer Science or IT\n\nATS KEYWORDS (must check these exactly):\n- \"Java\"\n- \"JSP\" or \"Servlets\"\n- \"MySQL\" or \"SQL\"\n- \"Spring\" or \"Spring Boot\"\n- \"JDBC\"\n- \"OOP\" or \"Object Oriented\"\n- \"HTML\" or \"CSS\"\n- \"Git\" or \"GitHub\"\n\nKEYWORD SCORING:\n- 6-8 keywords found = 80-100 score (shortlist)\n- 4-5 keywords found = 60-79 score (review)\n- 0-3 keywords found = 0-59 score (reject)\n\nFRESHER BONUS:\n- Internship experience = +10 score\n- Personal projects = +5 score\n- Certifications = +5 score\n\nReturn ONLY valid JSON:\n\n{\n  \"name\": \"candidate full name\",\n  \"email\": \"candidate email or unknown\",\n  \"score\": 75,\n  \"tier\": \"shortlist\",\n  \"skills_matched\": [\"Java\", \"MySQL\"],\n  \"skills_missing\": [\"Spring Boot\"],\n  \"keywords_found\": [\"Java\", \"SQL\"],\n  \"keywords_missing\": [\"Spring Boot\"],\n  \"experience_years\": 0,\n  \"ats_match_percentage\": 75,\n  \"summary\": \"2-3 line summary\"\n}\n\nScoring rules:\n80-100 = shortlist\n50-79 = review\n0-49 = reject\n\nResume text:\n{{ $json.text }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        480,
+        -48
+      ],
+      "id": "c5e48873-29f7-47fe-9445-ec67e5294da5",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "SFW9y55lPChBcbwk",
+          "name": "OpenAi account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "e9b9c59e-47b2-46a4-875f-c37800bd1586",
+              "leftValue": null,
+              "rightValue": 65,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        832,
+        -48
+      ],
+      "id": "af66d409-85d6-47ed-a6df-daf6ec7dbfc9",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "sendTo": "{{ $('Gmail Trigger').item.json.from }}",
+        "subject": "Congratulations! You have been Shortlisted",
+        "emailType": "text",
+        "message": "Dear Candidate,  Congratulations! 🎉 You have been shortlisted for the next round of interviews.  Our HR team will contact you shortly with further details.  Best regards, HR Team",
+        "options": {
+          "senderName": "yash"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1040,
+        -144
+      ],
+      "id": "88f1a29d-ef9b-45a7-925d-e832af45b0dc",
+      "name": "Send a message",
+      "webhookId": "6af29a17-6219-4bea-ac1d-46e6f269a1d4",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "d1kZdBhzoRMAoZx4",
+          "name": "Gmail account 21"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "=manavpatil469@gmail.com",
+        "subject": "Thank you for your Application",
+        "emailType": "text",
+        "message": "Dear Candidate, Thank you for applying. We appreciate your interest. We will keep your profile for future opportunities. Best regards, HR Team",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1040,
+        48
+      ],
+      "id": "fd86affc-56e0-4c4b-afa8-74ac6f8229b3",
+      "name": "Send a message1",
+      "webhookId": "f68ceeb3-41ca-40b0-a3ec-d74f2990d1af",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "wMnemXK28PJXJfXP",
+          "name": "Gmail account 19"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a message": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "c371e71d-ee3e-40d0-9647-eb60aeeb1336",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "96e9a7263f9926333ef7fa07a42c854243346850720aafbd12dbd55d8e7ac587"
+  },
+  "id": "LgDpMvOcykIZBFXh",
+  "tags": []
+}
