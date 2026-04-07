@@ -1,5 +1,13 @@
-- name: Install n8n
-  run: npm install -g n8n
+name: Run n8n Automation
 
-- name: Run n8n
-  run: n8n
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Trigger n8n Workflow
+      run: curl -X POST https://your-n8n-url/webhook/ai-resume
